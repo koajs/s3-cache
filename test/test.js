@@ -161,6 +161,46 @@ describe('no content', function () {
   })
 })
 
+describe('middleware', function () {
+  const app = koa()
+  const path = '/' + random()
+  const body = random()
+
+  app.use(cache)
+
+  app.use(function* () {
+    this.body = body
+  })
+
+  const server = app.listen()
+
+  it('should work as middleware', function (done) {
+    request(server)
+    .get(path)
+    .expect(body)
+    .expect(200, done)
+  })
+})
+
+describe('.wrap()', function () {
+  const app = koa()
+  const path = '/' + random()
+  const body = random()
+
+  app.use(cache.wrap(function* () {
+    this.body = body
+  }))
+
+  const server = app.listen()
+
+  it('should wrap middleware', function (done) {
+    request(server)
+    .get(path)
+    .expect(body)
+    .expect(200, done)
+  })
+})
+
 function random() {
   return Math.random().toString(36)
 }

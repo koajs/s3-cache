@@ -36,11 +36,62 @@ This is best for dynamically created content that is cached (i.e. thumbnails).
 Instead of caching yourself in the business logic,
 cache transparently with this module.
 
+## API
+
+### const cache = Cache(options)
+
+Create a `cache` instance.
+
+S3 options:
+
+- `key`
+- `secret`
+- `bucket`
+
+Other options:
+
+- `salt` - add a salt to namespace your `cache` instances
+
+### app.use(cache)
+
+You can use the cache as middleware,
+which caches all downstream middleware.
+
+```js
+app.use(cache)
+
+app.use(function* () {
+  this.body = 'something computationally intensive'
+})
+```
+
+### app.use(cache.wrap( next => ))
+
+Wrap a middleware with the cache.
+Useful for conditional caching
+
+```js
+app.use(cache.wrap(function* () {
+  this.body = 'something computationally intensive'
+}))
+```
+
+### const served = yield cache.get(this)
+
+Serve this request from the cache.
+Returns `served`, which is whether the response has been served from the cache.
+
+### yield cache.put(this)
+
+Caches the current response.
+
 ## Notes
 
 - You should set an object lifecycle rule.
   Ex. delete all files in the bucket after 7 days.
 - Objects are stored with `REDUCED_REDUNDANCY`.
+- Only supports `200-2` status codes.
+- If the body is streaming, the stream is cached to the filesystem so that the S3 client knows its `content-length`.
 
 [npm-image]: https://img.shields.io/npm/v/koa-s3-cache.svg?style=flat-square
 [npm-url]: https://npmjs.org/package/koa-s3-cache

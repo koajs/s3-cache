@@ -18,6 +18,28 @@ function Cache(options) {
   this.salt = options.salt || ''
 }
 
+// pretend it's a generator function so app.use() works
+// TODO: remove when we add async/await support
+Cache.prototype.constructor = function* () {}.constructor
+Cache.prototype.call = function* (ctx, next) {
+  if (yield* this.get(ctx)) return
+
+  yield* next
+
+  yield* this.put(ctx)
+}
+
+Cache.prototype.wrap = function (fn) {
+  const self = this
+  return function* (next) {
+    if (yield* self.get(this)) return
+
+    yield* fn.call(this, next)
+
+    yield* self.put(this)
+  }
+}
+
 Cache.prototype.get = function* (ctx) {
   const self = this
   const key = this._key(ctx)
