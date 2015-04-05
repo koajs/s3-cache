@@ -16,7 +16,7 @@
     "koa": "0",
     "mocha": "2",
     "standardberry": "*",
-    "supertest": "^0.15.0"
+    "supertest": "0"
   },
   "scripts": {
     "lint": "standardberry index.js",
