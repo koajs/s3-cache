@@ -7,7 +7,6 @@
 [![Dependency Status][david-image]][david-url]
 [![License][license-image]][license-url]
 [![Downloads][downloads-image]][downloads-url]
-[![Gittip][gittip-image]][gittip-url]
 
 Caches and serves responses to and from S3.
 Similar to [koa-cash](https://github.com/koajs/cash),
@@ -107,5 +106,3 @@ Caches the current response.
 [license-url]: LICENSE
 [downloads-image]: http://img.shields.io/npm/dm/koa-s3-cache.svg?style=flat-square
 [downloads-url]: https://npmjs.org/package/koa-s3-cache
-[gittip-image]: https://img.shields.io/gratipay/jonathanong.svg?style=flat-square
-[gittip-url]: https://gratipay.com/jonathanong/
