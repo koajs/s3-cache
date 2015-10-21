@@ -4,8 +4,3 @@ language: node_js
 sudo: false
 script: npm run test-ci
 after_script: npm install coveralls@2 && cat ./coverage/lcov.info | coveralls
-env:
-  global:
-  - secure: Wg5AnOPCq3jLdjN9utwMEX+fMhdTF9L4Yng/BOlVEBqgPn1qKW7h6DjdcMnznul3HTb+vt0EnKAnVeT9zbcvWKv5BuBHlFj7tn/oGnUYN4MdgZBU7sUpKxDaeWB7UJG9MfOizTy9/ao/xGChXppJzXMGnzQfLOiYAkYEDXOZzyI=
-  - secure: N4p8Z04OKflgAb+f6blGnQOAYxp1APdJV5Jazvb/P4jboWLx9/dQKkMpSBmiWGZjCx3Z7tOwWVNNcx1RloRYHMm/XmKPAKvyQwD7mF8au86tmk8tEsShOYEVypFbPQgMnXNkuxs5GTejACC5yCtdvDfwZyJbCm7zI0M/nKRUkq4=
-  - secure: jw+k92tyLXCWgycvWfciogDX/iKv2Upwg3sX2T1TuaR3zFa/mfeenOSWdmtjMO1ZolGGvAXvwxYZXgaMkP1Iu5IQmYY4N5aM9XtBSI5Y5dhpBBXzdn/Rx13hIxRrHgvlDeJdf04STv3e+bW95VD4P85+JksGSdgHS+PvI3+bSgE=
