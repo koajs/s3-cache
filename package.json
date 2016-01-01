@@ -13,10 +13,10 @@
   },
   "devDependencies": {
     "istanbul-harmony": "0",
-    "koa": "0",
+    "koa": "1.1.2",
     "mocha": "2",
     "standardberry": "*",
-    "supertest": "0"
+    "supertest": "1.1.0"
   },
   "scripts": {
     "lint": "standardberry index.js",
