@@ -12,13 +12,19 @@
     "temp-path": "^1.0.0"
   },
   "devDependencies": {
+    "babel-eslint": "^5.0.0",
+    "codecov": "^1.0.0",
+    "eslint": "^2.1.0",
+    "eslint-config-jongleberry": "^2.0.0",
+    "eslint-plugin-promise": "^1.0.8",
+    "eslint-plugin-standard": "^1.0.0",
     "istanbul": "^0.4.2",
     "koa": "^1.1.2",
     "mocha": "^2.4.5",
     "supertest": "^1.2.0"
   },
   "scripts": {
-    "lint": "standardberry index.js",
+    "lint": "eslint index.js test",
     "test": "mocha",
     "test-cov": "istanbul cover node_modules/mocha/bin/_mocha -- --reporter dot",
     "test-ci": "npm run lint && istanbul cover node_modules/mocha/bin/_mocha --report lcovonly -- --reporter dot"

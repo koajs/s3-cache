@@ -12,29 +12,29 @@ const cache = require('..')({
   salt: random(),
 })
 
-describe('string', function () {
+describe('string', () => {
   const app = koa()
   const path = '/' + random()
   const text = 'kljasldkfjlaksdjflkajsdf'
 
-  app.use(function* () {
-    if (yield* cache.get(this)) return
+  app.use(function * () {
+    if (yield cache.get(this)) return
 
     this.body = text
 
-    yield* cache.put(this)
+    yield cache.put(this)
   })
 
   const server = app.listen()
 
   let etag
 
-  it('should cache and serve the response', function (done) {
+  it('should cache and serve the response', done => {
     request(server)
     .get(path)
     .expect('Content-Type', /text\/plain/)
     .expect(200)
-    .expect(text, function (err, res) {
+    .expect(text, (err, res) => {
       if (err) return done(err)
 
       assert(etag = res.headers.etag)
@@ -42,13 +42,13 @@ describe('string', function () {
     })
   })
 
-  it('should serve the cached response', function (done) {
+  it('should serve the cached response', done => {
     request(server)
     .get(path)
     .expect('Content-Type', /text\/plain/)
     .expect('ETag', etag)
     .expect(200)
-    .expect(text, function (err, res) {
+    .expect(text, (err, res) => {
       if (err) return done(err)
 
       assert(etag = res.headers.etag)
@@ -56,7 +56,7 @@ describe('string', function () {
     })
   })
 
-  it('should support caching', function (done) {
+  it('should support caching', done => {
     request(server)
     .get(path)
     .set('if-none-match', etag)
@@ -64,28 +64,28 @@ describe('string', function () {
   })
 })
 
-describe('stream', function () {
+describe('stream', () => {
   const app = koa()
   const path = '/' + random()
 
-  app.use(function* () {
-    if (yield* cache.get(this)) return
+  app.use(function * () {
+    if (yield cache.get(this)) return
 
     this.type = 'text'
     this.body = fs.createReadStream(__filename)
 
-    yield* cache.put(this)
+    yield cache.put(this)
   })
 
   const server = app.listen()
 
   let etag
 
-  it('should cache and serve the response', function (done) {
+  it('should cache and serve the response', done => {
     request(server)
     .get(path)
     .expect('Content-Type', /text\/plain/)
-    .expect(200, function (err, res) {
+    .expect(200, (err, res) => {
       if (err) return done(err)
 
       assert(etag = res.headers.etag)
@@ -94,12 +94,12 @@ describe('stream', function () {
     })
   })
 
-  it('should serve the cached response', function (done) {
+  it('should serve the cached response', done => {
     request(server)
     .get(path)
     .expect('Content-Type', /text\/plain/)
     .expect('ETag', etag)
-    .expect(200, function (err, res) {
+    .expect(200, (err, res) => {
       if (err) return done(err)
 
       assert(etag = res.headers.etag)
@@ -109,23 +109,22 @@ describe('stream', function () {
   })
 })
 
-describe('404', function () {
+describe('404', () => {
   const app = koa()
-  const path = '/' + random()
 
-  app.use(function* () {
-    if (yield* cache.get(this)) return
+  app.use(function * () {
+    if (yield cache.get(this)) return
 
-    yield* cache.put(this)
+    yield cache.put(this)
   })
 
   const server = app.listen()
 
-  it('should not cache 404s', function (done) {
+  it('should not cache 404s', done => {
     request(server)
     .get('/')
     .expect(404)
-    .expect('Not Found', function (err, res) {
+    .expect('Not Found', (err, res) => {
       if (err) return done(err)
 
       assert(!res.headers.tag)
@@ -134,25 +133,24 @@ describe('404', function () {
   })
 })
 
-describe('no content', function () {
+describe('no content', () => {
   const app = koa()
-  const path = '/' + random()
 
-  app.use(function* () {
-    if (yield* cache.get(this)) return
+  app.use(function * () {
+    if (yield cache.get(this)) return
 
     this.body = ''
 
-    yield* cache.put(this)
+    yield cache.put(this)
   })
 
   const server = app.listen()
 
-  it('should not cache empty bodies', function (done) {
+  it('should not cache empty bodies', done => {
     request(server)
     .get('/')
     .expect(200)
-    .expect('', function (err, res) {
+    .expect('', (err, res) => {
       if (err) return done(err)
 
       assert(!res.headers.tag)
@@ -161,20 +159,20 @@ describe('no content', function () {
   })
 })
 
-describe('middleware', function () {
+describe('middleware', () => {
   const app = koa()
   const path = '/' + random()
   const body = random()
 
   app.use(cache)
 
-  app.use(function* () {
+  app.use(function * () {
     this.body = body
   })
 
   const server = app.listen()
 
-  it('should work as middleware', function (done) {
+  it('should work as middleware', done => {
     request(server)
     .get(path)
     .expect(body)
@@ -182,18 +180,18 @@ describe('middleware', function () {
   })
 })
 
-describe('.wrap()', function () {
+describe('.wrap()', () => {
   const app = koa()
   const path = '/' + random()
   const body = random()
 
-  app.use(cache.wrap(function* () {
+  app.use(cache.wrap(function * () {
     this.body = body
   }))
 
   const server = app.listen()
 
-  it('should wrap middleware', function (done) {
+  it('should wrap middleware', done => {
     request(server)
     .get(path)
     .expect(body)
@@ -201,6 +199,6 @@ describe('.wrap()', function () {
   })
 })
 
-function random() {
+function random () {
   return Math.random().toString(36)
 }

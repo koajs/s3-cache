@@ -9,7 +9,7 @@ const fs = require('fs')
 
 module.exports = Cache
 
-function Cache(options) {
+function Cache (options) {
   if (!(this instanceof Cache)) return new Cache(options)
 
   this.client = knox.createClient(options)
@@ -20,31 +20,30 @@ function Cache(options) {
 
 // pretend it's a generator function so app.use() works
 // TODO: remove when we add async/await support
-Cache.prototype.constructor = function* () {}.constructor
-Cache.prototype.call = function* (ctx, next) {
-  if (yield* this.get(ctx)) return
+Cache.prototype.constructor = function * () {}.constructor
+Cache.prototype.call = function * (ctx, next) {
+  if (yield this.get(ctx)) return
 
-  yield* next
+  yield next
 
-  yield* this.put(ctx)
+  yield this.put(ctx)
 }
 
 Cache.prototype.wrap = function (fn) {
   const self = this
-  return function* (next) {
-    if (yield* self.get(this)) return
+  return function * (next) {
+    if (yield self.get(this)) return
 
-    yield* fn.call(this, next)
+    yield fn.call(this, next)
 
-    yield* self.put(this)
+    yield self.put(this)
   }
 }
 
-Cache.prototype.get = function* (ctx) {
-  const self = this
+Cache.prototype.get = function * (ctx) {
   const key = this._key(ctx)
-  const res = yield new Promise(function (resolve, reject) {
-    self.client.getFile(key, function (err, res) {
+  const res = yield new Promise((resolve, reject) => {
+    this.client.getFile(key, (err, res) => {
       /* istanbul ignore if */
       if (err) return reject(err)
       resolve(res)
@@ -58,7 +57,7 @@ Cache.prototype.get = function* (ctx) {
 
   ctx.body = res
 
-  let keys = [
+  const keys = [
     'cache-control',
     'content-disposition',
     'content-encoding',
@@ -67,9 +66,11 @@ Cache.prototype.get = function* (ctx) {
     'content-type',
     'etag',
   ]
-  for (let key of keys)
-    if (res.headers[key])
+  for (const key of keys) {
+    if (res.headers[key]) {
       ctx.response.set(key, res.headers[key])
+    }
+  }
 
   if (ctx.fresh) ctx.status = 304
 
@@ -77,7 +78,7 @@ Cache.prototype.get = function* (ctx) {
 }
 
 Cache.prototype.set =
-Cache.prototype.put = function* (ctx) {
+Cache.prototype.put = function * (ctx) {
   switch (ctx.status) {
     case 200:
     case 201:
@@ -103,8 +104,8 @@ Cache.prototype.put = function* (ctx) {
     // re-serve the same response
     response.body = fs.createReadStream(filename)
     // always delete the file afterwards
-    onFinished(res, function () {
-      setImmediate(function () {
+    onFinished(res, () => {
+      setImmediate(() => {
         fs.unlink(filename, noop)
       })
     })
@@ -115,27 +116,29 @@ Cache.prototype.put = function* (ctx) {
   }
 
   // note: capitalization required for Knox
-  let keys = [
+  const keys = [
     'Cache-Control',
     'Content-Disposition',
     'Content-Encoding',
     'Content-Language',
     'Content-Type',
   ]
-  for (let key of keys)
-    if (response.get(key))
+  for (const key of keys) {
+    if (response.get(key)) {
       headers[key] = response.get(key)
+    }
+  }
 
-  let key = this._key(ctx)
+  const key = this._key(ctx)
 
-  let s3response = yield new Promise(function (resolve, reject) {
+  const s3response = yield new Promise((resolve, reject) => {
     if (filename) {
       client.putFile(filename, key, headers, callback)
     } else {
       client.putBuffer(body, key, headers, callback)
     }
 
-    function callback(err, res) {
+    function callback (err, res) {
       // istanbul ignore if */
       if (err) return reject(err)
       resolve(res)
@@ -144,7 +147,8 @@ Cache.prototype.put = function* (ctx) {
       // istanbul ignore if */
       if (res.statusCode !== 200) {
         res.setEncoding('utf8')
-        res.on('data', function (chunk) {
+        res.on('data', (chunk) => {
+          /* eslint no-console: 0 */
           console.log(chunk)
         })
       }
@@ -171,4 +175,4 @@ Cache.prototype._key = function (ctx) {
     .digest('hex')
 }
 
-function noop() {}
+function noop () {}
