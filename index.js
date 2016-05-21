@@ -1,18 +1,30 @@
 'use strict'
 
-const onFinished = require('on-finished')
-const temp = require('temp-path')
+const s3ProxyStream = require('s3-proxy-stream')
+const Promise = require('any-promise')
 const crypto = require('crypto')
-const knox = require('knox')
-const cp = require('fs-cp')
-const fs = require('fs')
+const AWS = require('aws-sdk')
+
+const HEADER_TO_PARAM_MAP = {
+  'Cache-Control': 'CacheControl',
+  'Content-Disposition': 'ContentDisposition',
+  'Content-Encoding': 'ContentEncoding',
+  'Content-Language': 'ContentLanguage',
+  'Content-Type': 'ContentType',
+}
 
 module.exports = Cache
 
 function Cache (options) {
   if (!(this instanceof Cache)) return new Cache(options)
 
-  this.client = knox.createClient(options)
+  if (options.key) options.accessKeyId = options.key
+  if (options.secret) options.secretAccessKey = options.secret
+
+  this.s3 = options.s3 || new AWS.S3(options)
+  this.proxy = s3ProxyStream(this.s3, options)
+
+  this.bucket = options.bucket || options.Bucket
 
   // salt for hashing
   this.salt = options.salt || ''
@@ -42,13 +54,12 @@ Cache.prototype.wrap = function (fn) {
 
 Cache.prototype.get = function * (ctx) {
   const key = this._key(ctx)
-  const res = yield new Promise((resolve, reject) => {
-    this.client.getFile(key, (err, res) => {
-      /* istanbul ignore if */
-      if (err) return reject(err)
-      resolve(res)
-    })
+  console.log(key)
+  const res = yield this.proxy(key, {
+    headers: ctx.request.headers,
   })
+
+  console.log(res)
 
   if (res.statusCode !== 200) {
     res.resume()
@@ -57,19 +68,8 @@ Cache.prototype.get = function * (ctx) {
 
   ctx.body = res
 
-  const keys = [
-    'cache-control',
-    'content-disposition',
-    'content-encoding',
-    'content-language',
-    'content-length',
-    'content-type',
-    'etag',
-  ]
-  for (const key of keys) {
-    if (res.headers[key]) {
-      ctx.response.set(key, res.headers[key])
-    }
+  for (const key of res.headers) {
+    ctx.response.set(key, res.headers[key])
   }
 
   if (ctx.fresh) ctx.status = 304
@@ -88,79 +88,39 @@ Cache.prototype.put = function * (ctx) {
       return
   }
 
-  const client = this.client
+  console.log('what')
+
   const response = ctx.response
-  const res = ctx.res
-  let body = response.body
-  if (!body) return
+  const body = response.body
+  if (body == null) return
 
-  // if a stream, we save it to a file and serve from that
-  // because amazon needs to know the content length prior -_-
-  let filename
-  if (typeof body.pipe === 'function') {
-    yield cp(body, filename = temp())
-    body = null
-
-    // re-serve the same response
-    response.body = fs.createReadStream(filename)
-    // always delete the file afterwards
-    onFinished(res, () => {
-      setImmediate(() => {
-        fs.unlink(filename, noop)
-      })
-    })
+  const params = {
+    Bucket: this.bucket,
+    StorageClass: 'REDUCED_REDUNDANCY',
+    Body: body,
   }
 
-  const headers = {
-    'x-amz-storage-class': 'REDUCED_REDUNDANCY',
-  }
+  console.log(params)
 
-  // note: capitalization required for Knox
-  const keys = [
-    'Cache-Control',
-    'Content-Disposition',
-    'Content-Encoding',
-    'Content-Language',
-    'Content-Type',
-  ]
-  for (const key of keys) {
-    if (response.get(key)) {
-      headers[key] = response.get(key)
-    }
+  for (const header of Object.keys(HEADER_TO_PARAM_MAP)) {
+    if (response.get(header)) params[HEADER_TO_PARAM_MAP[header]] = response.get(header)
   }
 
   const key = this._key(ctx)
 
-  const s3response = yield new Promise((resolve, reject) => {
-    if (filename) {
-      client.putFile(filename, key, headers, callback)
-    } else {
-      client.putBuffer(body, key, headers, callback)
-    }
-
-    function callback (err, res) {
-      // istanbul ignore if */
+  const data = yield new Promise((resolve, reject) => {
+    console.log('put object')
+    this.s3.putObject({
+      Key: key
+    }, (err, data) => {
+      console.log('putting object')
       if (err) return reject(err)
-      resolve(res)
-
-      // TODO: real error handling
-      // istanbul ignore if */
-      if (res.statusCode !== 200) {
-        res.setEncoding('utf8')
-        res.on('data', (chunk) => {
-          /* eslint no-console: 0 */
-          console.log(chunk)
-        })
-      }
-    }
+      resolve(data)
+    })
   })
 
-  // dump the response because we don't care
-  s3response.resume()
-  ctx.assert(s3response.statusCode === 200, 'Did not get a 200 from uploading the file.')
-
   // use s3's headers
-  response.etag = s3response.headers.etag
+  response.etag = data.ETag
 
   if (ctx.fresh) ctx.status = 304
 }
@@ -174,5 +134,3 @@ Cache.prototype._key = function (ctx) {
     .update(ctx.request.url)
     .digest('hex')
 }
-
-function noop () {}
