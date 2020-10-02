@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "babel-eslint": "^6.0.0",
-    "codecov": "^1.0.0",
+    "codecov": "^3.7.2",
     "eslint": "^2.1.0",
     "eslint-config-jongleberry": "^4.0.0",
     "eslint-plugin-babel": "^3.2.0",
