@@ -8,6 +8,8 @@
 [![License][license-image]][license-url]
 [![Downloads][downloads-image]][downloads-url]
 
+> NOTE: MAINTAINER WANTED
+
 Caches and serves responses to and from S3.
 Similar to [koa-cash](https://github.com/koajs/cash),
 except it optimizes for the S3 use-case by streaming.
